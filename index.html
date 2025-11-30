@@ -3,83 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VIP Payout Master v3.1</title>
+    <title>VIP Asset Unlinker</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; }
-        .loader { border-top-color: #ffffff; -webkit-animation: spinner 1.5s linear infinite; animation: spinner 1.5s linear infinite; }
-        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    </style>
 </head>
-<body class="flex flex-col items-center min-h-screen">
+<body class="bg-gray-100 min-h-screen flex flex-col items-center">
 
-    <div class="w-full bg-blue-800 p-4 shadow-md flex justify-between items-center text-white">
-        <div class="flex items-center gap-2">
-            <i class="fa-brands fa-facebook-square text-2xl"></i>
-            <h1 class="text-xl font-bold">VIP Payout Master <span class="text-xs bg-blue-500 px-2 py-0.5 rounded">v3.1</span></h1>
-        </div>
-        <button onclick="logout()" id="logout-btn" class="hidden text-sm bg-blue-900 hover:bg-black px-3 py-1 rounded transition">Logout</button>
+    <div class="w-full bg-red-800 p-4 text-white flex justify-between items-center shadow-lg">
+        <h1 class="text-xl font-bold"><i class="fa-solid fa-scissors"></i> Payout Unlinker Tool</h1>
+        <button onclick="logout()" class="text-xs bg-red-900 px-3 py-1 rounded">Logout</button>
     </div>
 
     <div class="p-4 w-full max-w-2xl mt-4">
 
-        <div id="login-section" class="w-full bg-white p-8 rounded-lg shadow-xl text-center">
-            <div class="mb-6">
-                <div class="bg-blue-50 p-4 rounded-full w-20 h-20 mx-auto flex items-center justify-center mb-4">
-                    <i class="fa-solid fa-file-invoice-dollar text-4xl text-blue-600"></i>
-                </div>
-                <h2 class="text-2xl font-bold text-gray-800">Payout Manager</h2>
-                <p class="text-gray-500 mt-2">Connect to manage Payout Settings & Tax Info</p>
-            </div>
-            <button onclick="loginWithFacebook()" class="w-full bg-[#1877F2] hover:bg-[#166fe5] text-white font-bold py-3 px-4 rounded-lg transition duration-300 flex items-center justify-center gap-3 shadow-md">
-                <i class="fa-brands fa-facebook-f text-xl"></i>
+        <div id="login-section" class="bg-white p-8 rounded-lg shadow-xl text-center">
+            <h2 class="text-2xl font-bold text-gray-800">Payout Removal Tool</h2>
+            <p class="text-gray-500 mb-6">Target: Remove Page from Payout ID 421712623385611</p>
+            <button onclick="loginWithFacebook()" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded shadow">
                 Login with Facebook
             </button>
         </div>
 
-        <div id="data-section" class="hidden w-full">
-            <div class="bg-white p-4 rounded-lg shadow-sm mb-4 border-l-4 border-green-500 flex justify-between items-center">
-                <div>
-                    <p class="text-gray-500 text-xs uppercase tracking-wide font-bold">Logged In User</p>
-                    <p class="font-bold text-lg text-gray-800" id="user-name">...</p>
+        <div id="data-section" class="hidden w-full space-y-4">
+            
+            <div id="target-box" class="hidden bg-red-50 border-2 border-red-500 p-6 rounded-xl shadow-xl relative overflow-hidden">
+                <div class="absolute top-0 right-0 bg-red-500 text-white text-xs px-2 py-1">TARGET FOUND</div>
+                
+                <h2 class="text-2xl font-bold text-gray-800 mb-1">Doctor Amna Noor</h2>
+                <p class="font-mono text-sm text-red-600 mb-4">Page ID: 1668250996626414</p>
+
+                <div class="bg-white p-4 rounded border border-red-200 mb-4">
+                    <p class="text-xs text-gray-500 font-bold uppercase">Connected Payout</p>
+                    <p class="font-bold text-lg">MALIK JAWAD</p>
+                    <p class="font-mono text-sm text-gray-500">ID: 421712623385611</p>
                 </div>
-                <div class="text-right">
-                    <button onclick="getPages()" class="text-blue-600 text-sm hover:underline"><i class="fa-solid fa-rotate"></i> Refresh List</button>
+
+                <div class="grid gap-3">
+                    <a href="https://business.facebook.com/latest/monetization/settings?asset_id=1668250996626414" target="_blank" 
+                       class="block w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded text-center shadow transition">
+                        <i class="fa-solid fa-ban"></i> 1. Disable / Unlink Ads on Reels
+                    </a>
+                    
+                    <a href="https://business.facebook.com/latest/payouts/earnings_source?business_id=421712623385611" target="_blank" 
+                       class="block w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-3 px-4 rounded text-center shadow transition">
+                        <i class="fa-solid fa-exchange-alt"></i> 2. Force Change Payout
+                    </a>
                 </div>
+                
+                <p class="text-xs text-gray-500 mt-3 text-center">
+                    <b>Tip:</b> Click Button 1 to turn off Ads on Reels (this removes the payout link). <br>
+                    Or Click Button 2 to replace this payout with another.
+                </p>
             </div>
 
-            <div id="pages-list" class="space-y-3">
-                </div>
-        </div>
-    </div>
-
-    <div id="details-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all">
-            <div class="bg-blue-800 p-4 flex justify-between items-center text-white">
-                <h3 class="font-bold text-lg" id="modal-title">Page Details</h3>
-                <button onclick="closeModal()" class="text-blue-200 hover:text-white"><i class="fa-solid fa-times text-xl"></i></button>
-            </div>
-            <div class="p-6 space-y-4" id="modal-content">
-                </div>
-            <div class="bg-gray-50 p-4 border-t text-right">
-                <button onclick="closeModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-6 rounded">Close</button>
-            </div>
+            <div id="pages-list" class="space-y-2 opacity-75"></div>
         </div>
     </div>
 
     <script>
-        // --- APP ID ---
         const APP_ID = '821932720609644'; 
-        // --------------
+        // TARGET IDs
+        const TARGET_PAGE_ID = '1668250996626414';
 
         window.fbAsyncInit = function() {
-            FB.init({
-                appId      : APP_ID,
-                cookie     : true,
-                xfbml      : true,
-                version    : 'v18.0'
-            });
+            FB.init({ appId: APP_ID, cookie: true, xfbml: true, version: 'v18.0' });
         };
 
         (function(d, s, id){
@@ -93,137 +80,38 @@
         function loginWithFacebook() {
             FB.login(function(response) {
                 if (response.authResponse) {
-                    showDashboard();
-                    getUserData();
+                    document.getElementById('login-section').classList.add('hidden');
+                    document.getElementById('data-section').classList.remove('hidden');
+                    getPages();
                 }
-            }, {scope: 'public_profile,pages_show_list,pages_read_engagement,business_management,ads_management'});
+            }, {scope: 'public_profile,pages_show_list,business_management,ads_management'});
         }
 
-        function logout() {
-            FB.logout(function(response) { location.reload(); });
-        }
-
-        function showDashboard() {
-            document.getElementById('login-section').classList.add('hidden');
-            document.getElementById('data-section').classList.remove('hidden');
-            document.getElementById('logout-btn').classList.remove('hidden');
-        }
-
-        function getUserData() {
-            FB.api('/me', function(response) {
-                document.getElementById('user-name').innerText = response.name;
-                getPages();
-            });
-        }
+        function logout() { FB.logout(function() { location.reload(); }); }
 
         function getPages() {
             const list = document.getElementById('pages-list');
-            list.innerHTML = '<div class="text-center py-10"><div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-700"></div><p class="mt-2 text-gray-500">Loading Pages...</p></div>';
+            list.innerHTML = '<p class="text-center">Scanning for Doctor Amna Noor...</p>';
             
-            FB.api('/me/accounts', {fields: 'name,access_token,id,category'}, function(response) {
-                list.innerHTML = ''; 
-
-                if(response.data && response.data.length > 0){
+            FB.api('/me/accounts', {fields: 'name,id'}, function(response) {
+                list.innerHTML = '';
+                
+                if(response.data){
                     response.data.forEach(page => {
-                        const item = document.createElement('div');
-                        item.className = "bg-white p-4 rounded-lg shadow border border-gray-200 flex justify-between items-center hover:bg-blue-50 transition";
-                        item.innerHTML = `
-                            <div class="flex items-center gap-3">
-                                <div class="bg-blue-100 text-blue-700 w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg shadow-sm">
-                                    ${page.name.charAt(0)}
-                                </div>
-                                <div>
-                                    <h3 class="font-bold text-gray-800">${page.name}</h3>
-                                    <p class="text-xs text-gray-500">ID: ${page.id}</p>
-                                </div>
-                            </div>
-                            <button onclick="checkPageDetails('${page.id}', '${page.access_token}')" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2 px-3 rounded shadow flex items-center gap-1">
-                                <i class="fa-solid fa-wrench"></i> Manage Payout
-                            </button>
-                        `;
-                        list.appendChild(item);
+                        
+                        // IF TARGET FOUND (Doctor Amna Noor)
+                        if(page.id === TARGET_PAGE_ID) {
+                            document.getElementById('target-box').classList.remove('hidden');
+                        } else {
+                            // Other pages (Small list)
+                            const item = document.createElement('div');
+                            item.className = "bg-white p-3 rounded border text-gray-500 text-sm flex justify-between";
+                            item.innerHTML = `<span>${page.name}</span> <span class="font-mono">${page.id}</span>`;
+                            list.appendChild(item);
+                        }
                     });
-                } else {
-                    list.innerHTML = '<p class="text-center text-gray-500">No pages found.</p>';
                 }
             });
-        }
-
-        function checkPageDetails(pageId, pageToken) {
-            const modal = document.getElementById('details-modal');
-            const content = document.getElementById('modal-content');
-            modal.classList.remove('hidden');
-            content.innerHTML = '<div class="text-center py-10"><div class="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-blue-700"></div><p class="mt-2 font-bold text-gray-600">Accessing Payout Hub...</p></div>';
-
-            FB.api('/' + pageId, {fields: 'name,business'}, function(response) {
-                
-                if (response.error) {
-                    content.innerHTML = `
-                        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
-                            <strong class="font-bold">Error!</strong>
-                            <span class="block sm:inline">${response.error.message}</span>
-                        </div>`;
-                    return;
-                }
-
-                let businessHtml = '';
-                
-                if (response.business) {
-                    // --- DIRECT LINK TO PAYOUT SETTINGS (Your Request) ---
-                    const directPayoutLink = `https://www.facebook.com/payout/settings?business_id=${response.business.id}`;
-                    
-                    businessHtml = `
-                        <div class="bg-gray-50 border border-gray-300 p-5 rounded-lg shadow-inner text-left">
-                            <h2 class="text-xl font-bold text-gray-800">${response.business.name}</h2>
-                            <p class="text-xs text-gray-500 font-mono mb-4">BM ID: ${response.business.id}</p>
-                            
-                            <div class="space-y-4">
-                                <a href="${directPayoutLink}" target="_blank" class="block w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-4 px-6 rounded shadow flex justify-between items-center transition transform hover:scale-105">
-                                    <div class="flex items-center gap-3">
-                                        <i class="fa-solid fa-gear text-2xl"></i>
-                                        <div>
-                                            <span class="block text-sm">Open Payout Settings</span>
-                                            <span class="text-xs text-blue-200 font-normal">Manage Bank & Tax Info</span>
-                                        </div>
-                                    </div>
-                                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
-                                </a>
-
-                                <div class="bg-white p-3 rounded text-xs text-gray-600 border border-gray-200">
-                                    <strong><i class="fa-solid fa-circle-info text-blue-500"></i> Instructions:</strong>
-                                    <ul class="list-decimal ml-4 mt-1 space-y-1">
-                                        <li>Click the button above to open Payouts.</li>
-                                        <li>Go to <b>Payout Methods</b> to update Bank Account.</li>
-                                        <li>Go to <b>Tax Info</b> and click <b>Update</b> to create/transfer payout profile.</li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    // Fallback for Personal Pages
-                    const personalLink = "https://www.facebook.com/payout/settings";
-                    businessHtml = `
-                        <div class="bg-yellow-50 p-5 rounded-lg border border-yellow-200 text-center">
-                            <h2 class="text-lg font-bold text-gray-800 mb-2">Personal Admin Payout</h2>
-                            <p class="text-sm text-gray-600 mb-4">No Business Manager detected. This page is likely on your personal profile.</p>
-                            
-                            <a href="${personalLink}" target="_blank" class="block w-full bg-gray-800 hover:bg-black text-white font-bold py-3 px-4 rounded transition">
-                                Open My Payout Settings
-                            </a>
-                        </div>
-                    `;
-                }
-
-                content.innerHTML = `
-                     <h2 class="text-xl font-bold mb-4 border-b pb-2">${response.name}</h2>
-                     ${businessHtml}
-                `;
-            });
-        }
-
-        function closeModal() {
-            document.getElementById('details-modal').classList.add('hidden');
         }
     </script>
 </body>
