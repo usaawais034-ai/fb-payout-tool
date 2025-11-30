@@ -1,32 +1,246 @@
-function checkPageDetails(pageId, pageToken) {
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VIP Payout Manager Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; }
+        .loader { border-top-color: #3498db; -webkit-animation: spinner 1.5s linear infinite; animation: spinner 1.5s linear infinite; }
+        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="flex flex-col items-center min-h-screen p-4">
+
+    <div class="w-full max-w-2xl bg-white rounded-lg shadow-sm p-4 mb-4 flex justify-between items-center">
+        <h1 class="text-xl font-bold text-gray-800"><i class="fa-brands fa-facebook text-blue-600"></i> Page Asset Manager</h1>
+        <button onclick="logout()" id="logout-btn" class="hidden text-sm text-red-500 hover:text-red-700 font-semibold">Logout</button>
+    </div>
+
+    <div id="login-section" class="w-full max-w-md bg-white p-8 rounded-lg shadow-xl text-center">
+        <div class="mb-6">
+            <div class="bg-blue-100 p-4 rounded-full w-20 h-20 mx-auto flex items-center justify-center mb-4">
+                <i class="fa-solid fa-shield-halved text-4xl text-blue-600"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-gray-800">Welcome Back</h2>
+            <p class="text-gray-500">Securely manage your Page Payouts & Assets</p>
+        </div>
+        <button onclick="loginWithFacebook()" class="w-full bg-[#1877F2] hover:bg-[#166fe5] text-white font-bold py-3 px-4 rounded-lg transition duration-300 flex items-center justify-center gap-3 shadow-md">
+            <i class="fa-brands fa-facebook-f text-xl"></i>
+            Continue with Facebook
+        </button>
+    </div>
+
+    <div id="data-section" class="hidden w-full max-w-2xl">
+        
+        <div class="bg-white p-4 rounded-lg shadow-sm mb-4 border-l-4 border-blue-500 flex justify-between items-center">
+            <div>
+                <p class="text-gray-500 text-xs uppercase tracking-wide font-bold">Logged in as</p>
+                <p class="font-bold text-lg text-gray-800" id="user-name">...</p>
+            </div>
+            <div class="text-right">
+                <p class="text-gray-500 text-xs">Total Pages</p>
+                <p class="font-bold text-xl text-blue-600" id="total-pages">0</p>
+            </div>
+        </div>
+
+        <div id="pages-list" class="space-y-4">
+            </div>
+    </div>
+
+    <div id="details-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden">
+            <div class="bg-gray-50 p-4 border-b flex justify-between items-center">
+                <h3 class="font-bold text-lg text-gray-800" id="modal-title">Page Details</h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-red-500"><i class="fa-solid fa-times text-xl"></i></button>
+            </div>
+            <div class="p-6 space-y-4" id="modal-content">
+                </div>
+            <div class="bg-gray-50 p-4 border-t text-right">
+                <button onclick="closeModal()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-6 rounded transition">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        const APP_ID = '821932720609644'; // YOUR APP ID
+        // ---------------------
+
+        window.fbAsyncInit = function() {
+            FB.init({
+                appId      : APP_ID,
+                cookie     : true,
+                xfbml      : true,
+                version    : 'v18.0'
+            });
+        };
+
+        (function(d, s, id){
+             var js, fjs = d.getElementsByTagName(s)[0];
+             if (d.getElementById(id)) {return;}
+             js = d.createElement(s); js.id = id;
+             js.src = "https://connect.facebook.net/en_US/sdk.js";
+             fjs.parentNode.insertBefore(js, fjs);
+        }(document, 'script', 'facebook-jssdk'));
+
+        function loginWithFacebook() {
+            // Asking for ads_management as well now
+            FB.login(function(response) {
+                if (response.authResponse) {
+                    document.getElementById('login-section').classList.add('hidden');
+                    document.getElementById('data-section').classList.remove('hidden');
+                    document.getElementById('logout-btn').classList.remove('hidden');
+                    getUserData();
+                } else {
+                    alert("Login cancelled.");
+                }
+            }, {scope: 'public_profile,pages_show_list,pages_read_engagement,business_management,ads_management'});
+        }
+
+        function logout() {
+            FB.logout(function(response) {
+                location.reload();
+            });
+        }
+
+        function getUserData() {
+            FB.api('/me', function(response) {
+                document.getElementById('user-name').innerText = response.name;
+                getPages();
+            });
+        }
+
+        function getPages() {
+            document.getElementById('pages-list').innerHTML = '<div class="text-center p-4"><div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12 mb-4 mx-auto"></div><p>Fetching your pages...</p></div>';
+            
+            FB.api('/me/accounts', {fields: 'name,access_token,id,category,tasks'}, function(response) {
+                const list = document.getElementById('pages-list');
+                list.innerHTML = ''; 
+
+                if(response.data && response.data.length > 0){
+                    document.getElementById('total-pages').innerText = response.data.length;
+                    
+                    response.data.forEach(page => {
+                        const item = document.createElement('div');
+                        item.className = "bg-white p-5 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition duration-300";
+                        item.innerHTML = `
+                            <div class="flex justify-between items-start">
+                                <div class="flex items-center gap-3">
+                                    <div class="bg-blue-50 text-blue-600 w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg">
+                                        ${page.name.charAt(0)}
+                                    </div>
+                                    <div>
+                                        <h3 class="font-bold text-gray-800 text-lg">${page.name}</h3>
+                                        <p class="text-xs text-gray-400">ID: ${page.id}</p>
+                                        <span class="inline-block mt-1 bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded">${page.category || 'Page'}</span>
+                                    </div>
+                                </div>
+                                <button onclick="checkPageDetails('${page.id}', '${page.access_token}')" class="bg-green-600 hover:bg-green-700 text-white text-sm font-bold py-2 px-4 rounded shadow flex items-center gap-2">
+                                    <i class="fa-solid fa-money-bill-wave"></i> Check Assets
+                                </button>
+                            </div>
+                        `;
+                        list.appendChild(item);
+                    });
+                } else {
+                    list.innerHTML = '<p class="text-center text-gray-500">No pages found.</p>';
+                }
+            });
+        }
+
+        function checkPageDetails(pageId, pageToken) {
             // Show Loading Modal
             const modal = document.getElementById('details-modal');
             const content = document.getElementById('modal-content');
             modal.classList.remove('hidden');
             content.innerHTML = '<div class="text-center py-8"><div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-10 w-10 mx-auto mb-2"></div><p>Asking Facebook for data...</p></div>';
 
-            // API Call
+            // API Call with Error Handling
             FB.api('/' + pageId, {
                 fields: 'name,business,monetization_products,payment_options',
                 access_token: pageToken
             }, function(response) {
-                // --- ERROR CATCHING (NEW) ---
+                
+                // IF ERROR OCCURS
                 if (response.error) {
                     content.innerHTML = `
-                        <div class="bg-red-100 p-4 rounded text-red-700">
-                            <h3 class="font-bold">Facebook Error:</h3>
-                            <p>${response.error.message}</p>
-                            <p class="text-xs mt-2 text-gray-600">Code: ${response.error.code}</p>
+                        <div class="bg-red-100 p-4 rounded text-red-700 text-left">
+                            <h3 class="font-bold text-lg mb-2"><i class="fa-solid fa-triangle-exclamation"></i> Facebook Error:</h3>
+                            <p class="font-bold">${response.error.message}</p>
+                            <p class="text-sm mt-2 font-mono bg-red-50 p-2 rounded">Code: ${response.error.code} | Type: ${response.error.type}</p>
                         </div>
                         <div class="mt-4 text-center">
-                            <p class="text-sm">Please take a screenshot of this error and send it to me.</p>
+                            <p class="text-sm text-gray-600">Please send a screenshot of this error.</p>
                         </div>
                     `;
-                    document.getElementById('modal-title').innerText = "Error Found";
-                    return; // Stop here
+                    document.getElementById('modal-title').innerText = "Access Error";
+                    return; 
                 }
-                // -----------------------------
-                
+
+                // IF SUCCESS
                 renderDetails(response);
             });
         }
+
+        function renderDetails(data) {
+            const content = document.getElementById('modal-content');
+            document.getElementById('modal-title').innerText = data.name;
+
+            // 1. Business Manager Info
+            let businessHtml = '';
+            if (data.business) {
+                businessHtml = `
+                    <div class="bg-green-50 p-4 rounded-lg border border-green-200">
+                        <p class="text-xs text-green-600 font-bold uppercase mb-1">Owning Business (BM)</p>
+                        <p class="font-bold text-gray-800 text-lg">${data.business.name}</p>
+                        <p class="text-sm text-gray-500">BM ID: <span class="font-mono bg-white px-1 rounded border">${data.business.id}</span></p>
+                        <p class="text-xs text-gray-400 mt-2"><i class="fa-solid fa-check-circle"></i> This BM controls the Payouts.</p>
+                    </div>
+                `;
+            } else {
+                businessHtml = `
+                    <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                        <p class="text-xs text-yellow-600 font-bold uppercase mb-1">Business Manager</p>
+                        <p class="font-bold text-gray-800">No Business Connected</p>
+                        <p class="text-xs text-gray-500 mt-1">If this page has Payouts, you might need 'Ads Management' permission or higher admin access.</p>
+                    </div>
+                `;
+            }
+
+            // 2. Monetization Products
+            let monetHtml = '';
+            if (data.monetization_products && data.monetization_products.length > 0) {
+                monetHtml = '<div class="flex flex-wrap gap-2 mt-2">';
+                data.monetization_products.forEach(prod => {
+                    monetHtml += `<span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded border border-blue-200">${prod}</span>`;
+                });
+                monetHtml += '</div>';
+            } else {
+                monetHtml = '<p class="text-sm text-gray-500 italic mt-1">No active monetization tools found via API.</p>';
+            }
+
+            content.innerHTML = `
+                <div class="space-y-4 text-left">
+                    ${businessHtml}
+                    
+                    <div class="bg-gray-50 p-4 rounded-lg border">
+                        <p class="text-xs text-gray-500 font-bold uppercase mb-1">Monetization Tools</p>
+                        ${monetHtml}
+                    </div>
+
+                    <div class="text-xs text-gray-400 mt-4 border-t pt-2">
+                        <p><strong>Note:</strong> Exact "Payout Account ID" (Bank info) is hidden by Facebook security.</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function closeModal() {
+            document.getElementById('details-modal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
