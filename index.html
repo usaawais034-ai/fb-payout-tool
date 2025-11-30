@@ -87,7 +87,6 @@
         }(document, 'script', 'facebook-jssdk'));
 
         function loginWithFacebook() {
-            // Asking for ads_management as well now
             FB.login(function(response) {
                 if (response.authResponse) {
                     document.getElementById('login-section').classList.add('hidden');
@@ -116,7 +115,7 @@
         function getPages() {
             document.getElementById('pages-list').innerHTML = '<div class="text-center p-4"><div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12 mb-4 mx-auto"></div><p>Fetching your pages...</p></div>';
             
-            FB.api('/me/accounts', {fields: 'name,access_token,id,category,tasks'}, function(response) {
+            FB.api('/me/accounts', {fields: 'name,access_token,id,category'}, function(response) {
                 const list = document.getElementById('pages-list');
                 list.innerHTML = ''; 
 
@@ -139,7 +138,7 @@
                                     </div>
                                 </div>
                                 <button onclick="checkPageDetails('${page.id}', '${page.access_token}')" class="bg-green-600 hover:bg-green-700 text-white text-sm font-bold py-2 px-4 rounded shadow flex items-center gap-2">
-                                    <i class="fa-solid fa-money-bill-wave"></i> Check Assets
+                                    <i class="fa-solid fa-briefcase"></i> Check Business
                                 </button>
                             </div>
                         `;
@@ -152,35 +151,29 @@
         }
 
         function checkPageDetails(pageId, pageToken) {
-            // Show Loading Modal
             const modal = document.getElementById('details-modal');
             const content = document.getElementById('modal-content');
             modal.classList.remove('hidden');
-            content.innerHTML = '<div class="text-center py-8"><div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-10 w-10 mx-auto mb-2"></div><p>Asking Facebook for data...</p></div>';
+            content.innerHTML = '<div class="text-center py-8"><div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-10 w-10 mx-auto mb-2"></div><p>Asking Facebook for Business Info...</p></div>';
 
-            // API Call with Error Handling
+            // UPDATED API CALL: Removed 'monetization_products' to fix Error 100
             FB.api('/' + pageId, {
-                fields: 'name,business,monetization_products,payment_options',
+                fields: 'name,business', 
                 access_token: pageToken
             }, function(response) {
                 
-                // IF ERROR OCCURS
                 if (response.error) {
                     content.innerHTML = `
                         <div class="bg-red-100 p-4 rounded text-red-700 text-left">
                             <h3 class="font-bold text-lg mb-2"><i class="fa-solid fa-triangle-exclamation"></i> Facebook Error:</h3>
                             <p class="font-bold">${response.error.message}</p>
-                            <p class="text-sm mt-2 font-mono bg-red-50 p-2 rounded">Code: ${response.error.code} | Type: ${response.error.type}</p>
-                        </div>
-                        <div class="mt-4 text-center">
-                            <p class="text-sm text-gray-600">Please send a screenshot of this error.</p>
+                            <p class="text-sm mt-2 font-mono bg-red-50 p-2 rounded">Code: ${response.error.code}</p>
                         </div>
                     `;
                     document.getElementById('modal-title').innerText = "Access Error";
                     return; 
                 }
 
-                // IF SUCCESS
                 renderDetails(response);
             });
         }
@@ -189,15 +182,15 @@
             const content = document.getElementById('modal-content');
             document.getElementById('modal-title').innerText = data.name;
 
-            // 1. Business Manager Info
+            // Business Manager Info Logic
             let businessHtml = '';
             if (data.business) {
                 businessHtml = `
                     <div class="bg-green-50 p-4 rounded-lg border border-green-200">
-                        <p class="text-xs text-green-600 font-bold uppercase mb-1">Owning Business (BM)</p>
+                        <p class="text-xs text-green-600 font-bold uppercase mb-1">Owning Business (Payout Owner)</p>
                         <p class="font-bold text-gray-800 text-lg">${data.business.name}</p>
-                        <p class="text-sm text-gray-500">BM ID: <span class="font-mono bg-white px-1 rounded border">${data.business.id}</span></p>
-                        <p class="text-xs text-gray-400 mt-2"><i class="fa-solid fa-check-circle"></i> This BM controls the Payouts.</p>
+                        <p class="text-sm text-gray-500">BM ID: <span class="font-mono bg-white px-1 rounded border border-gray-300 select-all">${data.business.id}</span></p>
+                        <p class="text-xs text-gray-400 mt-2"><i class="fa-solid fa-check-circle"></i> Use this BM ID to trace Payouts.</p>
                     </div>
                 `;
             } else {
@@ -205,34 +198,17 @@
                     <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
                         <p class="text-xs text-yellow-600 font-bold uppercase mb-1">Business Manager</p>
                         <p class="font-bold text-gray-800">No Business Connected</p>
-                        <p class="text-xs text-gray-500 mt-1">If this page has Payouts, you might need 'Ads Management' permission or higher admin access.</p>
+                        <p class="text-xs text-gray-500 mt-1">This page is owned by an individual profile, or Business info is hidden due to permissions.</p>
                     </div>
                 `;
-            }
-
-            // 2. Monetization Products
-            let monetHtml = '';
-            if (data.monetization_products && data.monetization_products.length > 0) {
-                monetHtml = '<div class="flex flex-wrap gap-2 mt-2">';
-                data.monetization_products.forEach(prod => {
-                    monetHtml += `<span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded border border-blue-200">${prod}</span>`;
-                });
-                monetHtml += '</div>';
-            } else {
-                monetHtml = '<p class="text-sm text-gray-500 italic mt-1">No active monetization tools found via API.</p>';
             }
 
             content.innerHTML = `
                 <div class="space-y-4 text-left">
                     ${businessHtml}
                     
-                    <div class="bg-gray-50 p-4 rounded-lg border">
-                        <p class="text-xs text-gray-500 font-bold uppercase mb-1">Monetization Tools</p>
-                        ${monetHtml}
-                    </div>
-
-                    <div class="text-xs text-gray-400 mt-4 border-t pt-2">
-                        <p><strong>Note:</strong> Exact "Payout Account ID" (Bank info) is hidden by Facebook security.</p>
+                    <div class="bg-gray-100 p-4 rounded-lg text-center">
+                        <p class="text-xs text-gray-500">To change Payouts, you need to be Admin of the Business Manager shown above.</p>
                     </div>
                 </div>
             `;
